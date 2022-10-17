@@ -56,6 +56,9 @@ private: // メンバ変数
 	Input* input = nullptr;
 	DebugText debugText;	
 
+	Sprite* sprit1 = nullptr;
+	Sprite* sprit2 = nullptr;
+
 	/// <summary>
 	/// ゲームシーン用
 	/// </summary>

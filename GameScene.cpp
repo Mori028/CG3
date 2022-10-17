@@ -11,6 +11,8 @@ GameScene::~GameScene()
 {
 	delete spriteBG;
 	delete object3d;
+	delete(sprit1);
+	delete(sprit2);
 }
 
 void GameScene::Initialize(DirectXCommon* dxCommon, Input* input)
@@ -35,6 +37,14 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input)
 	// 3Dオブジェクト生成
 	object3d = Object3d::Create();
 	object3d->Update();
+
+	//テクスチャ２番に読み込み
+	Sprite::LoadTexture(2, L"Resources/texture.png");
+
+	//座標｛0，0｝にテクスチャ２番のスプライトを生成
+	sprit1 = Sprite::Create(2,{0, 0});
+	//座標｛500，500｝にテクスチャ２番のスプライトを生成
+	sprit2 = Sprite::Create(2, { 500,500 }, { 1,0,0,1 } ,{0,0},false,true);
 }
 
 void GameScene::Update()
@@ -58,13 +68,22 @@ void GameScene::Update()
 	// カメラ移動
 	if (input->PushKey(DIK_W) || input->PushKey(DIK_S) || input->PushKey(DIK_D) || input->PushKey(DIK_A))
 	{
-		if (input->PushKey(DIK_W)) { Object3d::CameraMoveVector({ 0.0f,+1.0f,0.0f }); }
-		else if (input->PushKey(DIK_S)) { Object3d::CameraMoveVector({ 0.0f,-1.0f,0.0f }); }
-		if (input->PushKey(DIK_D)) { Object3d::CameraMoveVector({ +1.0f,0.0f,0.0f }); }
-		else if (input->PushKey(DIK_A)) { Object3d::CameraMoveVector({ -1.0f,0.0f,0.0f }); }
+		if (input->PushKey(DIK_W)) { Object3d::CameraMoveEyeVector({ 0.0f,+1.0f,0.0f }); }
+		else if (input->PushKey(DIK_S)) { Object3d::CameraMoveEyeVector({ 0.0f,-1.0f,0.0f }); }
+		if (input->PushKey(DIK_D)) { Object3d::CameraMoveEyeVector({ +1.0f,0.0f,0.0f }); }
+		else if (input->PushKey(DIK_A)) { Object3d::CameraMoveEyeVector({ -1.0f,0.0f,0.0f }); }
 	}
 
 	object3d->Update();
+
+	if (input->PushKey(DIK_SPACE)) {
+		//現在の座標の取得
+		XMFLOAT2 position = sprit1->GetPosition();
+		//移動後の座標を計算
+		position.x += 1.0f;
+		//座標の変更を反映
+		sprit1->SetPosition(position);
+	}
 }
 
 void GameScene::Draw()
@@ -77,7 +96,8 @@ void GameScene::Draw()
 	Sprite::PreDraw(cmdList);
 	// 背景スプライト描画
 	spriteBG->Draw();
-
+	/*sprit1->Draw();
+	sprit2->Draw();*/
 	/// <summary>
 	/// ここに背景スプライトの描画処理を追加できる
 	/// </summary>

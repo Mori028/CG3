@@ -19,7 +19,6 @@ ComPtr<ID3D12RootSignature> Object3d::rootsignature;
 ComPtr<ID3D12PipelineState> Object3d::pipelinestate;
 ComPtr<ID3D12DescriptorHeap> Object3d::descHeap;
 ComPtr<ID3D12Resource> Object3d::vertBuff;
-ComPtr<ID3D12Resource> Object3d::indexBuff;
 ComPtr<ID3D12Resource> Object3d::texbuff;
 CD3DX12_CPU_DESCRIPTOR_HANDLE Object3d::cpuDescHandleSRV;
 CD3DX12_GPU_DESCRIPTOR_HANDLE Object3d::gpuDescHandleSRV;
@@ -29,20 +28,18 @@ XMFLOAT3 Object3d::eye = { 0, 0, -50.0f };
 XMFLOAT3 Object3d::target = { 0, 0, 0 };
 XMFLOAT3 Object3d::up = { 0, 1, 0 };
 D3D12_VERTEX_BUFFER_VIEW Object3d::vbView{};
-D3D12_INDEX_BUFFER_VIEW Object3d::ibView{};
 Object3d::VertexPosNormalUv Object3d::vertices[vertexCount];
-unsigned short Object3d::indices[indexCount];
 XMMATRIX Object3d::matBillboard = XMMatrixIdentity();
 XMMATRIX Object3d::matBillboardY = XMMatrixIdentity();
 
 
-void Object3d::StaticInitialize(ID3D12Device * device, int window_width, int window_height)
+void Object3d::StaticInitialize(ID3D12Device* device, int window_width, int window_height)
 {
 	// nullptrチェック
 	assert(device);
 
 	Object3d::device = device;
-		
+
 	// デスクリプタヒープの初期化
 	InitializeDescriptorHeap();
 
@@ -60,7 +57,7 @@ void Object3d::StaticInitialize(ID3D12Device * device, int window_width, int win
 
 }
 
-void Object3d::PreDraw(ID3D12GraphicsCommandList * cmdList)
+void Object3d::PreDraw(ID3D12GraphicsCommandList* cmdList)
 {
 	// PreDrawとPostDrawがペアで呼ばれていなければエラー
 	assert(Object3d::cmdList == nullptr);
@@ -73,7 +70,7 @@ void Object3d::PreDraw(ID3D12GraphicsCommandList * cmdList)
 	// ルートシグネチャの設定
 	cmdList->SetGraphicsRootSignature(rootsignature.Get());
 	// プリミティブ形状を設定
-	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 }
 
 void Object3d::PostDraw()
@@ -82,7 +79,7 @@ void Object3d::PostDraw()
 	Object3d::cmdList = nullptr;
 }
 
-Object3d * Object3d::Create()
+Object3d* Object3d::Create()
 {
 	// 3Dオブジェクトのインスタンスを生成
 	Object3d* object3d = new Object3d();
@@ -140,7 +137,7 @@ void Object3d::CameraMoveEyeVector(XMFLOAT3 move)
 void Object3d::InitializeDescriptorHeap()
 {
 	HRESULT result = S_FALSE;
-	
+
 	// デスクリプタヒープを生成	
 	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
 	descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -312,7 +309,7 @@ void Object3d::InitializeGraphicsPipeline()
 	gpipeline.InputLayout.NumElements = _countof(inputLayout);
 
 	// 図形の形状設定（三角形）
-	gpipeline.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	gpipeline.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
 
 	gpipeline.NumRenderTargets = 1;	// 描画対象は1つ
 	gpipeline.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // 0～255指定のRGBA
@@ -357,7 +354,7 @@ void Object3d::LoadTexture()
 	ScratchImage scratchImg{};
 
 	// WICテクスチャのロード
-	result = LoadFromWICFile( L"Resources/tex1.png", WIC_FLAGS_NONE, &metadata, scratchImg);
+	result = LoadFromWICFile(L"Resources/tex1.png", WIC_FLAGS_NONE, &metadata, scratchImg);
 	assert(SUCCEEDED(result));
 
 	ScratchImage mipChain{};
@@ -425,24 +422,18 @@ void Object3d::CreateModel()
 {
 	HRESULT result = S_FALSE;
 
-	
 	//四角形の頂点データ
-	VertexPosNormalUv verticesSquare[] = {
-		{{-5.0f,-5.0f,0.0f},{0,0,1}, {0,1}},
-		{{-5.0f,+5.0f,0.0f},{0,0,1}, {0,0}},
-		{{+5.0f,-5.0f,0.0f},{0,0,1}, {1,1}},
-		{{+5.0f,+5.0f,0.0f},{0,0,1}, {1,0}},
+	VertexPosNormalUv verticesPoint[] = {
+		{{0.0f,0.0f,0.0f,},{0,0,1},{0,1}},
 	};
 	//メンバ変数にコピー
-	std::copy(std::begin(verticesSquare), std::end(verticesSquare), vertices);
+	std::copy(std::begin(verticesPoint), std::end(verticesPoint), vertices);
 
 	//四角形のインデックスデータ
 	unsigned short indicesSquare[] = {
 		0,1,2,//三角形１
 		2,1,3,//三角形２
 	};
-	//メンバ変数にコピー
-	std::copy(std::begin(indicesSquare), std::end(indicesSquare), indices);
 
 	UINT sizeVB = static_cast<UINT>(sizeof(vertices));
 
@@ -469,34 +460,6 @@ void Object3d::CreateModel()
 	vbView.BufferLocation = vertBuff->GetGPUVirtualAddress();
 	vbView.SizeInBytes = sizeof(vertices);
 	vbView.StrideInBytes = sizeof(vertices[0]);
-
-	UINT sizeIB = static_cast<UINT>(sizeof(indices));
-	// リソース設定
-	resourceDesc.Width = sizeIB;
-
-	// インデックスバッファ生成
-	result = device->CreateCommittedResource(
-		&heapProps, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		IID_PPV_ARGS(&indexBuff));
-
-	// インデックスバッファへのデータ転送
-	unsigned short* indexMap = nullptr;
-	result = indexBuff->Map(0, nullptr, (void**)&indexMap);
-	if (SUCCEEDED(result)) {
-
-		// 全インデックスに対して
-		for (int i = 0; i < _countof(indices); i++)
-		{
-			indexMap[i] = indices[i];	// インデックスをコピー
-		}
-
-		indexBuff->Unmap(0, nullptr);
-	}
-
-	// インデックスバッファビューの作成
-	ibView.BufferLocation = indexBuff->GetGPUVirtualAddress();
-	ibView.Format = DXGI_FORMAT_R16_UINT;
-	ibView.SizeInBytes = sizeof(indices);
 }
 
 void Object3d::UpdateViewMatrix()
@@ -517,7 +480,7 @@ void Object3d::UpdateViewMatrix()
 	//0ベクトルだと向きが定まらないので除外
 	assert(!XMVector3Equal(cameraAxisZ, XMVectorZero()));
 	assert(!XMVector3IsInfinite(cameraAxisZ));
-	assert(!XMVector3Equal(upVector,XMVectorZero()));
+	assert(!XMVector3Equal(upVector, XMVectorZero()));
 	assert(!XMVector3IsInfinite(upVector));
 
 	//ベクトルを正規化
@@ -542,7 +505,7 @@ void Object3d::UpdateViewMatrix()
 	matCameraRot.r[0] = cameraAxisX;
 	matCameraRot.r[1] = cameraAxisY;
 	matCameraRot.r[2] = cameraAxisZ;
-	matCameraRot.r[3] = XMVectorSet(0,0,0,1);
+	matCameraRot.r[3] = XMVectorSet(0, 0, 0, 1);
 
 #pragma region 全方向ビルドボード行列の計算
 	//カメラ座標系→ワールド座標系の変換行列
@@ -576,9 +539,9 @@ void Object3d::UpdateViewMatrix()
 	//視点座標にー１を掛けた座標
 	XMVECTOR reverseEyePosition = XMVectorNegate(eyePosition);
 	//カメラ位置からワールド原点へのベクトル(カメラ座標系)
-	XMVECTOR tX = XMVector3Dot(cameraAxisX,reverseEyePosition);//X成分
-	XMVECTOR tY = XMVector3Dot(cameraAxisY,reverseEyePosition);//Y成分
-	XMVECTOR tZ = XMVector3Dot(cameraAxisZ,reverseEyePosition);//Z成分
+	XMVECTOR tX = XMVector3Dot(cameraAxisX, reverseEyePosition);//X成分
+	XMVECTOR tY = XMVector3Dot(cameraAxisY, reverseEyePosition);//Y成分
+	XMVECTOR tZ = XMVector3Dot(cameraAxisZ, reverseEyePosition);//Z成分
 	//一つのベクトルにまとめる
 	XMVECTOR translation = XMVectorSet(tX.m128_f32[1], tY.m128_f32[1], tZ.m128_f32[2], 1.0f);
 
@@ -651,11 +614,9 @@ void Object3d::Draw()
 	// nullptrチェック
 	assert(device);
 	assert(Object3d::cmdList);
-		
+
 	// 頂点バッファの設定
 	cmdList->IASetVertexBuffers(0, 1, &vbView);
-	// インデックスバッファの設定
-	cmdList->IASetIndexBuffer(&ibView);
 
 	// デスクリプタヒープの配列
 	ID3D12DescriptorHeap* ppHeaps[] = { descHeap.Get() };
@@ -666,5 +627,5 @@ void Object3d::Draw()
 	// シェーダリソースビューをセット
 	cmdList->SetGraphicsRootDescriptorTable(1, gpuDescHandleSRV);
 	// 描画コマンド
-	cmdList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);
+	cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);
 }

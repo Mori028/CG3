@@ -5,6 +5,7 @@
 #include <d3d12.h>
 #include <DirectXMath.h>
 #include <d3dx12.h>
+#include <forward_list>
 
 /// <summary>
 /// 3Dオブジェクト
@@ -38,7 +39,7 @@ private: // 定数
 	static const float radius;				// 底面の半径
 	static const float prizmHeight;			// 柱の高さ
 	static const int planeCount = division * 2 + division * 2;		// 面の数
-	static const int vertexCount = 30;//頂点数
+	static const int vertexCount = 1024;//頂点数
 
 public: // 静的メンバ関数
 	/// <summary>
@@ -101,6 +102,7 @@ public: // 静的メンバ関数
 	/// </summary>
 	/// <param name="move">移動量</param>
 	static void CameraMoveEyeVector(XMFLOAT3 move);
+
 private: // 静的メンバ変数
 	// デバイス
 	static ID3D12Device* device;
@@ -186,9 +188,36 @@ public: // メンバ関数
 	/// </summary>
 	void Draw();
 
+	//パーティクルの追加
+	//life　生存時間
+	//position　初期座標 
+	//velocity　速度
+	//accel　加速度
+	void Add(int life, XMFLOAT3 position, XMFLOAT3 velocity, XMFLOAT3 accel);
 private: // メンバ変数
 	ComPtr<ID3D12Resource> constBuff; // 定数バッファ
 	
 	// ローカルスケール
 	XMFLOAT3 scale = { 1,1,1 };
+
+	//パーティクル配列
+	std::forward_list<Particle> particles;
+};
+
+//パーティクル1粒
+struct Particle {
+	//DirectX::を省略
+	using XMFLOAT3 = DirectX::XMFLOAT3;
+
+	//座標
+	XMFLOAT3 position = {};
+	//速度
+	XMFLOAT3 velocity = {};
+	//加速度
+	XMFLOAT3 accel = {};
+	//現在フレーム
+	int frame = 0;
+	//終了フレーム
+	int num_frame = 0;
+
 };

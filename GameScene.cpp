@@ -46,6 +46,11 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input)
 	sprit1 = Sprite::Create(2,{0, 0});
 	//座標｛500，500｝にテクスチャ２番のスプライトを生成
 	sprit2 = Sprite::Create(2, { 500,500 }, { 1,0,0,1 } ,{0,0},false,true);
+
+	for (int i = 0; < 100, i++) {
+		//X,Y,Z全ての[-5.0,-5.0f]でランダムに分布
+		const
+	}
 }
 
 void GameScene::Update()

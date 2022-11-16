@@ -1,5 +1,6 @@
 cbuffer cbuff0 : register(b0)
 {
+	matrix mat;　//ビュープロジェクション行列
 	matrix matBillboard; // ビルボード行列
 };
 

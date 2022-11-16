@@ -7,6 +7,24 @@
 #include <d3dx12.h>
 #include <forward_list>
 
+//パーティクル1粒
+struct Particle {
+	//DirectX::を省略
+	using XMFLOAT3 = DirectX::XMFLOAT3;
+
+	//座標
+	XMFLOAT3 position = {};
+	//速度
+	XMFLOAT3 velocity = {};
+	//加速度
+	XMFLOAT3 accel = {};
+	//現在フレーム
+	int frame = 0;
+	//終了フレーム
+	int num_frame = 0;
+
+};
+
 /// <summary>
 /// 3Dオブジェクト
 /// </summary>
@@ -31,6 +49,7 @@ public: // サブクラス
 	// 定数バッファ用データ構造体
 	struct ConstBufferData
 	{
+		XMMATRIX mat;//ビュープロジェクション行列;
 		XMMATRIX matBillboard;	// ビルボード行列
 	};
 
@@ -142,6 +161,7 @@ private: // 静的メンバ変数
 	static XMMATRIX matBillboard;
 	//Y軸回りビルボード行列
 	static XMMATRIX matBillboardY;
+
 private:// 静的メンバ関数
 	/// <summary>
 	/// デスクリプタヒープの初期化
@@ -202,22 +222,4 @@ private: // メンバ変数
 
 	//パーティクル配列
 	std::forward_list<Particle> particles;
-};
-
-//パーティクル1粒
-struct Particle {
-	//DirectX::を省略
-	using XMFLOAT3 = DirectX::XMFLOAT3;
-
-	//座標
-	XMFLOAT3 position = {};
-	//速度
-	XMFLOAT3 velocity = {};
-	//加速度
-	XMFLOAT3 accel = {};
-	//現在フレーム
-	int frame = 0;
-	//終了フレーム
-	int num_frame = 0;
-
 };

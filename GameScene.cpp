@@ -10,7 +10,7 @@ GameScene::GameScene()
 GameScene::~GameScene()
 {
 	delete spriteBG;
-	delete particleManager;
+	delete particleMan;
 	delete(sprit1);
 	delete(sprit2);
 }
@@ -36,20 +36,38 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input)
 	// 背景スプライト生成
 	spriteBG = Sprite::Create(1, { 0.0f,0.0f });
 	// 3Dオブジェクト生成
-	particleManager = ParticleManager::Create();
-	particleManager->Update();
+	particleMan = ParticleManager::Create();
+	particleMan->Update();
 
 	//テクスチャ２番に読み込み
-	Sprite::LoadTexture(2, L"Resources/texture.png");
+	Sprite::LoadTexture(2, L"Resources/effect1.png");
 
 	//座標｛0，0｝にテクスチャ２番のスプライトを生成
 	sprit1 = Sprite::Create(2,{0, 0});
 	//座標｛500，500｝にテクスチャ２番のスプライトを生成
 	sprit2 = Sprite::Create(2, { 500,500 }, { 1,0,0,1 } ,{0,0},false,true);
 
-	for (int i = 0; < 100, i++) {
+	for (int i = 0; i < 100; i++) {
 		//X,Y,Z全ての[-5.0,-5.0f]でランダムに分布
-		const
+		const float rnd_pos = 10.0f;
+		XMFLOAT3 pos{};
+		pos.x = (float)rand() / RAND_MAX * rnd_pos - rnd_pos / 2.0f;
+		pos.y = (float)rand() / RAND_MAX * rnd_pos - rnd_pos / 2.0f;
+		pos.z = (float)rand() / RAND_MAX * rnd_pos - rnd_pos / 2.0f;
+		//X,Y,Z全て[-0.05f,+0.05f]でランダムに分布
+		const float rnd_val = 0.1f;
+		XMFLOAT3 val{};
+		val.x = (float)rand() / RAND_MAX * rnd_val - rnd_val / 2.0f;
+		val.y = (float)rand() / RAND_MAX * rnd_val - rnd_val / 2.0f;
+		val.z = (float)rand() / RAND_MAX * rnd_val - rnd_val / 2.0f;
+		//重力に見立ててYのみ[-0.001f,0]でランダムに分布
+		XMFLOAT3 acc{};
+		const float md_acc = 0.001f;
+		acc.y = -(float)rand() / RAND_MAX * md_acc;
+
+		//追加
+		particleMan->Add(60, pos, val, acc);
+	
 	}
 }
 
@@ -80,7 +98,7 @@ void GameScene::Update()
 		else if (input->PushKey(DIK_A)) { ParticleManager::CameraMoveEyeVector({ -1.0f,0.0f,0.0f }); }
 	}
 
-	particleManager->Update();
+	particleMan->Update();
 
 	if (input->PushKey(DIK_SPACE)) {
 		//現在の座標の取得
@@ -119,7 +137,7 @@ void GameScene::Draw()
 	ParticleManager::PreDraw(cmdList);
 
 	// 3Dオブクジェクトの描画
-	particleManager->Draw();
+	particleMan->Draw();
 
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる

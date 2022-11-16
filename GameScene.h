@@ -63,6 +63,6 @@ private: // メンバ変数
 	/// ゲームシーン用
 	/// </summary>
 	Sprite* spriteBG = nullptr;
-	ParticleManager* particleManager = nullptr;
+	ParticleManager* particleMan = nullptr;
 };
 

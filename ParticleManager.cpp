@@ -32,6 +32,15 @@ ParticleManager::VertexPos ParticleManager::vertices[vertexCount];
 XMMATRIX ParticleManager::matBillboard = XMMatrixIdentity();
 XMMATRIX ParticleManager::matBillboardY = XMMatrixIdentity();
 
+//XMFLOAT3同士の加算処理
+const DirectX::XMFLOAT3 operator+(const DirectX::XMFLOAT3& Ihs, const DirectX::XMFLOAT3& rhs) {
+
+	XMFLOAT3 result;
+	result.x = Ihs.x + rhs.x;
+	result.y = Ihs.y + rhs.y;
+	result.z = Ihs.z + rhs.z;
+	return result;
+}
 
 void ParticleManager::StaticInitialize(ID3D12Device* device, int window_width, int window_height)
 {
@@ -584,10 +593,47 @@ void ParticleManager::Update()
 {
 	HRESULT result;
 	
-	// 定数バッファへデータ転送
+	//// 定数バッファへデータ転送
+	//ConstBufferData* constMap = nullptr;
+	//result = constBuff->Map(0, nullptr, (void**)&constMap);
+	//constMap->matBillboard = matView * matProjection;	// 行列の合成
+	//constBuff->Unmap(0, nullptr);
+
+	//寿命が尽きたパーティクルを全削除
+	particles.remove_if([](Particle& x) {
+		return x.frame >= x.num_frame;
+		});
+	//全パーティクルを更新
+	for (std::forward_list<Particle>::iterator it = particles.begin();
+		it != particles.end();
+		it++) {
+		//経過フレーム数をカウント
+		it->frame++;
+		//速度に加速度を加算
+		it->velocity = it->velocity + it->accel;
+		//速度による移動
+		it->position = it->position + it->velocity;
+	}
+	//頂点バッファへデータ転送
+	VertexPos* vertMap = nullptr;
+	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
+	if (SUCCEEDED(result)) {
+		//パーティクルの情報を1つずつ反映
+		for (std::forward_list<Particle>::iterator it = particles.begin();
+			it != particles.end();
+			it++) {
+			//座標
+			vertMap->pos = it->position;
+			//次の頂点へ
+			vertMap++;
+		}
+		vertBuff->Unmap(0, nullptr);
+	}
+	//定数バッファへデータ転送
 	ConstBufferData* constMap = nullptr;
 	result = constBuff->Map(0, nullptr, (void**)&constMap);
-	constMap->matBillboard = matView * matProjection;	// 行列の合成
+	constMap->mat = matView * matProjection;
+	constMap->matBillboard = matBillboard;
 	constBuff->Unmap(0, nullptr);
 }
 
@@ -609,7 +655,8 @@ void ParticleManager::Draw()
 	// シェーダリソースビューをセット
 	cmdList->SetGraphicsRootDescriptorTable(1, gpuDescHandleSRV);
 	// 描画コマンド
-	cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);
+	/*cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);*/
+	cmdList->DrawInstanced((UINT)std::distance(particles.begin(), particles.end()), 1, 0, 0);
 }
 
 void ParticleManager::Add(int life, XMFLOAT3 position, XMFLOAT3 velocity, XMFLOAT3 accel)

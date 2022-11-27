@@ -45,8 +45,13 @@ void main(
 	GSOutput element;
 	//4点分まわす
 	for (uint i = 0; i < vnum; i++) {
+		//中心からのオフセットをスケーリング
+		/*float4 offset = mul(matBillboard, offset_array[i]);*/
+		float4 offset;
+		offset = offset_array[i] * input[0].scale;
 		//中心からのオフセットをビルボード回転(モデル座標)
-		float4 offset = mul(matBillboard, offset_array[i]);
+		offset = mul(matBillboard, offset);
+
 		//オフセット分ずらす
 		element.svpos = input[0].pos + offset;
 		//ビュー変換、射影変換

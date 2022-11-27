@@ -86,7 +86,7 @@ void GameScene::Update()
 		acc.y = -(float)rand() / RAND_MAX * rnd_acc;
 
 		//追加
-		particleManager->Add(1, pos, vel, acc);
+		particleManager->Add(60, pos, vel, acc, 1.0f, 0.0f);
 
 	}
 

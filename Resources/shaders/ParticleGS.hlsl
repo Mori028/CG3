@@ -50,7 +50,7 @@ void main(
 		//オフセット分ずらす
 		element.svpos = input[0].pos + offset;
 		//ビュー変換、射影変換
-		element.svpos = mul(matBillboard, element.svpos);
+		element.svpos = mul(mat, element.svpos);
 		element.uv = uv_array[i];
 		output.Append(element);
 	}
